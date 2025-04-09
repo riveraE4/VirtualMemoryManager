@@ -31,6 +31,13 @@ int main(int argc, char** argv)
   FILE *out2 = fopen("out2.txt", "w");
   FILE *out3 = fopen("out3.txt", "w");
 
+  if (!out1 || !out2 || !out3) { //error handling
+    perror("Can't open and output .txt file(s)");
+    exit(1);
+  }
+
+
+
 
 
   return 0;
