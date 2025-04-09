@@ -52,8 +52,50 @@ int main(int argc, char** argv)
   int freeFrame = 0; /* index for the next free frame within physical memory */
   int tlbIndex = 0; /* index used for FIFO within TLB */
 
+  signed char physicalMemory[NUM_FRAMES * PAGE_SIZE];
+  memset(physicalMemory, 0, sizeof(physicalMemory));
 
+  int pageTable[NUM_PAGES];
+  memset(pageTable, -1, sizeof(pageTable));
 
+  TLBEntry tlb[TLB_SIZE];
+  memset(tlb, -1, sizeof(tlb));
+
+  while (fscanf(addressFile, "%d", &logicalAddress) != EOF) {
+    totalAddress++;
+  }
+
+  maskedAddress = logicalAddress + 0xFFFF;
+
+  pageNum = (maskedAddress >> 8) & 0xFF;
+  offset = maskedAddress & 0xFF;
+
+  int foundInTLB = 0;
+  for (int i = 0; i < TLB_SIZE; i++) {
+    if (tlb[i].page == pageNum) {
+      frameNum = tlb[i].frame;
+      hits++;
+      foundInTLB = 1;
+      break;
+    }
+  }
+
+  if (!foundInTLB) {
+    if (pageTable[pageNum] != 1) {
+      frameNum = pageTable[pageNum];
+    } else {
+      pageFaults++;
+      if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
+
+      }
+    }
+  }
+
+  fclose(addressFile);
+  fclose(backingStore);
+  fclose(out1);
+  fclose(out2);
+  fclose(out3);
 
   return 0;
 }
