@@ -7,7 +7,7 @@
 #define NUM_FRAMES 256
 #define TLB_SIZE 16
 
-typdef struct {
+typedef struct {
   int page;
   int frame;
 } TLBEntry;
@@ -36,6 +36,21 @@ int main(int argc, char** argv)
     exit(1);
   }
 
+  int logicalAddress = 0; /* logical address read from file */
+  int maskedAddress = 0; /* logical address with masking  */
+
+  int pageNum = 0; /* page # extracted from upper 8 bits */
+  int offset = 0; /* offset, from lower 8 bits*/
+
+  int frameNum = 0; /* frame number assigned to page */
+  int physicalAddress = 0; /* (frame number * PAGE_SIZE) + offset */
+
+  int totalAddress = 0; /* total # of processed addresses */
+  int hits = 0; /* counter for TLB Hits */
+  int pageFaults = 0; /* counter for page faults */
+
+  int freeFrame = 0; /* index for the next free frame within physical memory */
+  int tlbIndex = 0; /* index used for FIFO within TLB */
 
 
 
