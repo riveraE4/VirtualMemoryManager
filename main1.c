@@ -7,14 +7,14 @@
 #define NUM_FRAMES 256 /* physical memory: 256 frames */
 #define TLB_SIZE 16 /* number of entries in the tlb */
 
-/* structure to hold a tlb entry */
+/* will hold a tlb entry */
 typedef struct {
     int page;
     int frame;
 } TLBEntry;
 
 int main(int argc, char** argv) {
-    /* check if an address file is provided, error checking */
+    /* error checking */
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <address_file>\n", argv[0]);
         exit(1);
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
             tlbIndex = (tlbIndex + 1) % TLB_SIZE;
         }
 
-        /* compute physical address */
+        /* find the physical address */
         physicalAddress = frameNum * PAGE_SIZE + offset;
 
         /* retrieve the value stored at the physical address in physical memory */
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
     fclose(out2);
     fclose(out3);
 
-    /* print stats to the console */
+    /* print stats */
     printf("Total Addresses: %d\n", totalAddress);
     printf("TLB Hits: %d\n", hits);
     printf("Page Faults: %d\n", pageFaults);
