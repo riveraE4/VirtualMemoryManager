@@ -12,6 +12,18 @@ typedef struct {
     int frame;
 } TLBEntry;
 
+void loadPage(FILE *backingStore, int pageNum, signed char *physicalMemory, int frame)
+{
+  if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
+    fprintf(stderr, "Error: failed in backing store\n");
+    exit(1);
+  }
+  if (fread(&physicalMemory[frame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
+    fprintf(stderr, "Error: fread failed\n");
+    exit(1);
+  }
+}
+
 int main(int argc, char **argv) {
     /* error checking */
     if (argc < 2) {
@@ -97,22 +109,18 @@ int main(int argc, char **argv) {
 
         if (!foundInTLB) {
             if (pageTable[pageNum] != -1) {
-                // Page table hit, get the frame number
+                /* Page table hit, get the frame number */
                 frameNum = pageTable[pageNum];
-                // Optional: update the TLB on a page table hit if desired
+                /* update the TLB on a page table hit if desired */
                 tlb[tlbIndex].page = pageNum;
                 tlb[tlbIndex].frame = frameNum;
                 tlbIndex = (tlbIndex + 1) % TLB_SIZE;
             } else {
-                // Page fault occurs
+                /* Page fault occurs */
                 pageFaults++;
                 if (freeFrame < NUM_FRAMES) {
-                    // Use free frame available
-                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 ||
-                        fread(&physicalMemory[freeFrame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-                        fprintf(stderr, "Error accessing backing store\n");
-                        exit(1);
-                    }
+                    /* Use free frame available */
+                    loadPage(backingStore, pageNum, physicalMemory, freeFrame);
                     frameNum = freeFrame;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
