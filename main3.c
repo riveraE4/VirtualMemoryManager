@@ -12,8 +12,7 @@ typedef struct {
     int frame;
 } TLBEntry;
 
-int main (int argc, char** argv)
-{
+int main(int argc, char **argv) {
     /* error checking */
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <address_file>\n", argv[0]);
@@ -43,18 +42,18 @@ int main (int argc, char** argv)
         exit(1);
     }
 
-    int logicalAddress =0;
-    int maskedAddress =0;
-    int pageNum =0;
-    int offset =0;
-    int frameNum =0;
-    int physicalAddress =0;
-    int totalAddress =0;
-    int hits =0;
-    int pageFaults =0;
-    int freeFrame =0;
-    int tlbIndex =0;
-    int currentTime =0;
+    int logicalAddress = 0;
+    int maskedAddress = 0;
+    int pageNum = 0;
+    int offset = 0;
+    int frameNum = 0;
+    int physicalAddress = 0;
+    int totalAddress = 0;
+    int hits = 0;
+    int pageFaults = 0;
+    int freeFrame = 0;
+    int tlbIndex = 0;
+    int currentTime = 0;
 
     signed char physicalMemory[NUM_FRAMES * PAGE_SIZE];
     memset(physicalMemory, 0, sizeof(physicalMemory));
@@ -88,7 +87,7 @@ int main (int argc, char** argv)
 
         int foundInTLB = 0;
         for (int i = 0; i < TLB_SIZE; i++) {
-            if(tlb[i].page == pageNum) {
+            if (tlb[i].page == pageNum) {
                 frameNum = tlb[i].frame;
                 hits++;
                 foundInTLB = 1;
@@ -98,11 +97,19 @@ int main (int argc, char** argv)
 
         if (!foundInTLB) {
             if (pageTable[pageNum] != -1) {
+                // Page table hit, get the frame number
                 frameNum = pageTable[pageNum];
+                // Optional: update the TLB on a page table hit if desired
+                tlb[tlbIndex].page = pageNum;
+                tlb[tlbIndex].frame = frameNum;
+                tlbIndex = (tlbIndex + 1) % TLB_SIZE;
             } else {
+                // Page fault occurs
                 pageFaults++;
                 if (freeFrame < NUM_FRAMES) {
-                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 || fread(&physicalMemory[freeFrame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
+                    // Use free frame available
+                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 ||
+                        fread(&physicalMemory[freeFrame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
                         fprintf(stderr, "Error accessing backing store\n");
                         exit(1);
                     }
@@ -111,26 +118,34 @@ int main (int argc, char** argv)
                     frameTable[frameNum] = pageNum;
                     freeFrame++;
                 } else {
-                    int lru =0;
-                    for (int i = 1; i < NUM_FRAMES;++i) {
-                        if (lastUsed[i] < lastUsed[lru]) lru = i;
+                    // No free frame available, perform LRU replacement
+                    int lru = 0;
+                    for (int i = 1; i < NUM_FRAMES; ++i) {
+                        if (lastUsed[i] < lastUsed[lru]) {
+                            lru = i;
+                        }
                     }
                     int victimPage = frameTable[lru];
                     pageTable[victimPage] = -1;
+
+                    // Invalidate any TLB entries for the victim page
                     for (int i = 0; i < TLB_SIZE; ++i) {
                         if (tlb[i].page == victimPage) {
                             tlb[i].page = -1;
                         }
+                    }
 
-                        if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 || fread(&physicalMemory[lru * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
+                    // Load the new page into the LRU frame
+                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 ||
+                        fread(&physicalMemory[lru * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
                         fprintf(stderr, "Error accessing backing store\n");
                         exit(1);
                     }
                     frameNum = lru;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
-                    }
                 }
+                // Update the TLB with the newly loaded page
                 tlb[tlbIndex].page = pageNum;
                 tlb[tlbIndex].frame = frameNum;
                 tlbIndex = (tlbIndex + 1) % TLB_SIZE;
@@ -157,7 +172,6 @@ int main (int argc, char** argv)
     printf("Page Faults: %d\n", pageFaults);
     printf("TLB Hit Rate: %.2f\n", (float)hits / totalAddress);
     printf("Page Fault Rate: %.2f\n", (float)pageFaults / totalAddress);
-    
-    return 0;
 
+    return 0;
 }
