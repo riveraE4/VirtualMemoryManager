@@ -54,18 +54,20 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    int logicalAddress = 0;
-    int maskedAddress = 0;
-    int pageNum = 0;
-    int offset = 0;
-    int frameNum = 0;
-    int physicalAddress = 0;
-    int totalAddress = 0;
-    int hits = 0;
-    int pageFaults = 0;
-    int freeFrame = 0;
-    int tlbIndex = 0;
-    int currentTime = 0;
+    int logicalAddress = 0; /* logical address read from the input */
+    int maskedAddress = 0; /* logical is turned into 16 bits */
+    int pageNum = 0; /* page number upper 8 bits*/
+    int offset = 0; /* offset which is the lower 8 bits*/
+    int frameNum = 0; /* frame number related to the page where it is stored in physical memory */
+    int physicalAddress = 0; /* computation done by frameNum * PAGE_SIZE + offset */
+    
+    int totalAddress = 0; /* total number of processed addresses */
+    int hits = 0; /* # of TLB hits */
+    int pageFaults = 0; /* # of page faults */
+
+    int freeFrame = 0; /* next frame in physical memory */
+    int tlbIndex = 0; /* updating index in TLB */
+    int currentTime = 0; /* time counter for LRU frame replacement */
 
     signed char physicalMemory[NUM_FRAMES * PAGE_SIZE];
     memset(physicalMemory, 0, sizeof(physicalMemory));
@@ -143,26 +145,26 @@ int main(int argc, char **argv) {
                         }
                     }
 
-                    /* Load the new page into the LRU frame */
+                    /* load the new page into the LRU frame */
                     loadPage(backingStore, pageNum, physicalMemory, lru);
                     frameNum = lru;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
                 }
-                /* Update the TLB with the newly loaded page */
+                /* update the TLB with the newly loaded page */
                 tlb[tlbIndex].page = pageNum;
                 tlb[tlbIndex].frame = frameNum;
                 tlbIndex = (tlbIndex + 1) % TLB_SIZE;
             }
         }
-
+        /* physical addresses are retrieved and calculated */
         physicalAddress = frameNum * PAGE_SIZE + offset;
         int value = physicalMemory[physicalAddress];
 
         fprintf(out2, "%d\n", physicalAddress);
         fprintf(out3, "%d\n", value);
 
-        lastUsed[frameNum] = currentTime++;
+        lastUsed[frameNum] = currentTime++; /* a record of the last time of use for LRU*/
     }
 
     fclose(addressFile);
