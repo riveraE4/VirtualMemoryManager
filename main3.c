@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
                     frameTable[frameNum] = pageNum;
                     freeFrame++;
                 } else {
-                    // No free frame available, perform LRU replacement
+                    /* No free frame available, perform LRU replacement */
                     int lru = 0;
                     for (int i = 1; i < NUM_FRAMES; ++i) {
                         if (lastUsed[i] < lastUsed[lru]) {
@@ -136,24 +136,20 @@ int main(int argc, char **argv) {
                     int victimPage = frameTable[lru];
                     pageTable[victimPage] = -1;
 
-                    // Invalidate any TLB entries for the victim page
+                    /* invalidate any TLB entries for the victim page */
                     for (int i = 0; i < TLB_SIZE; ++i) {
                         if (tlb[i].page == victimPage) {
                             tlb[i].page = -1;
                         }
                     }
 
-                    // Load the new page into the LRU frame
-                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0 ||
-                        fread(&physicalMemory[lru * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-                        fprintf(stderr, "Error accessing backing store\n");
-                        exit(1);
-                    }
+                    /* Load the new page into the LRU frame */
+                    loadPage(backingStore, pageNum, physicalMemory, lru);
                     frameNum = lru;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
                 }
-                // Update the TLB with the newly loaded page
+                /* Update the TLB with the newly loaded page */
                 tlb[tlbIndex].page = pageNum;
                 tlb[tlbIndex].frame = frameNum;
                 tlbIndex = (tlbIndex + 1) % TLB_SIZE;
