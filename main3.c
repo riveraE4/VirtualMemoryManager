@@ -13,34 +13,16 @@ typedef struct {
 } TLBEntry;
 
 int main(int argc, char **argv) {
-    /* error checking */
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <address_file>\n", argv[0]);
-        exit(1);
-    }
 
     /* open the address file for reading logical addresses */
     FILE *addressFile = fopen(argv[1], "r");
-    if (addressFile == NULL) {
-        perror("can't open address file");
-        exit(1);
-    }
-
     /* open the backing store binary file */
     FILE *backingStore = fopen("BACKING_STORE.bin", "rb");
-    if (backingStore == NULL) {
-        perror("can't open backing_store.bin");
-        exit(1);
-    }
 
     /* open output files for writing results */
     FILE *out1 = fopen("out1.txt", "w"); /* logical addresses */
     FILE *out2 = fopen("out2.txt", "w"); /* physical addresses */
     FILE *out3 = fopen("out3.txt", "w"); /* values stored in physical memory */
-    if (!out1 || !out2 || !out3) { /* error checking, check to see if they can be opened */
-        perror("can't open output .txt file(s)");
-        exit(1);
-    }
 
     int logicalAddress = 0; /* logical address read from the input */
     int maskedAddress = 0; /* logical is turned into 16 bits */
