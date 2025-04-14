@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PAGE_SIZE 256 /* each page/frame is 256 bytes */
-#define NUM_PAGES 256 /* logical address space: 256 pages */
-#define NUM_FRAMES 128 /* physical memory: 128 frames, made to be limiting*/
-#define TLB_SIZE 16 /* number of entries in the tlb */
+#define PAGE_SIZE 256
+#define NUM_PAGES 256
+#define NUM_FRAMES 32
+#define TLB_SIZE 16
 
-/* will hold a tlb entry */
 typedef struct {
     int page;
     int frame;
@@ -59,7 +58,7 @@ int main(int argc, char** argv) {
     int freeFrame = 0; 
     int tlbIndex = 0; 
 
-    /* for fifo page replacement when memory is full */
+    /* for FIFO when memory is full */
     int replacementIndex = 0; /* index for selecting victim in a fifo manner */
 
     /* create an array to keep track of which page is currently loaded in each frame */
@@ -118,21 +117,14 @@ int main(int argc, char** argv) {
                 /* if there is a free frame available, use it */
                 if (freeFrame < NUM_FRAMES) {
                     /* seek to the page's position in the backing store */
-                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
-                        fprintf(stderr, "error seeking in backing store\n");
-                        exit(1);
-                    }
-
-                    /* read the page into physical memory at the next free frame */
-                    if (fread(&physicalMemory[freeFrame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-                        fprintf(stderr, "error reading from backing store\n");
-                        exit(1);
-                    }
                     frameNum = freeFrame;
+
                     /* update page table and frame table */
                     pageTable[pageNum] = frameNum;
+
                     /* update the page table with mapping */
                     frameTable[frameNum] = pageNum;
+
                     freeFrame++;
                 }
                 else {
@@ -153,24 +145,13 @@ int main(int argc, char** argv) {
                         }
                     }
 
-                    /* find the new page's position in the backing store */
-                    if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
-                        fprintf(stderr, "error seeking in backing store\n");
-                        exit(1);
-                    }
-
-                    /* read the new page into physical memory at the victim frame */
-                    if (fread(&physicalMemory[victim * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-                        fprintf(stderr, "error reading from backing store\n");
-                        exit(1);
-                    }
                     frameNum = victim;
                     /* update page table and frame table for the new page */
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
                 }
 
-                /* update the tlb using fifo replacement policy */
+                /* update the tlb using FIFO */
                 tlb[tlbIndex].page = pageNum;
                 tlb[tlbIndex].frame = frameNum;
                 tlbIndex = (tlbIndex + 1) % TLB_SIZE;

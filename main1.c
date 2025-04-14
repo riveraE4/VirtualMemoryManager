@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PAGE_SIZE 256 /* each page/frame is 256 bytes */
-#define NUM_PAGES 256 /* logical address space: 256 pages */
-#define NUM_FRAMES 256 /* physical memory: 256 frames */
-#define TLB_SIZE 16 /* number of entries in the tlb */
+#define PAGE_SIZE 256
+#define NUM_PAGES 256
+#define NUM_FRAMES 256
+#define TLB_SIZE 16
 
-/* will hold a tlb entry */
 typedef struct {
     int page;
     int frame;
@@ -105,19 +104,6 @@ int main(int argc, char** argv) {
             } else {
                 /* page fault, page is not in physical memory */
                 pageFaults++;
-
-                /* seek to the page's position in the backing store */
-                if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
-                    fprintf(stderr, "error seeking in backing store\n");
-                    exit(1);
-                }
-
-                /* read the page into physical memory at the next free frame */
-                if (fread(&physicalMemory[freeFrame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-                    fprintf(stderr, "error reading from backing store\n");
-                    exit(1);
-                }
-
                 /* use the free frame that was filled */
                 frameNum = freeFrame;
                 /* update the page table with mapping */

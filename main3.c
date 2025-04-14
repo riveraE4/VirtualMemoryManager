@@ -4,25 +4,13 @@
 
 #define PAGE_SIZE 256
 #define NUM_PAGES 256
-#define NUM_FRAMES 128
+#define NUM_FRAMES 32
 #define TLB_SIZE 16
 
 typedef struct {
     int page;
     int frame;
 } TLBEntry;
-
-void loadPage(FILE *backingStore, int pageNum, signed char *physicalMemory, int frame)
-{
-  if (fseek(backingStore, pageNum * PAGE_SIZE, SEEK_SET) != 0) {
-    fprintf(stderr, "Error: failed in backing store\n");
-    exit(1);
-  }
-  if (fread(&physicalMemory[frame * PAGE_SIZE], sizeof(signed char), PAGE_SIZE, backingStore) != PAGE_SIZE) {
-    fprintf(stderr, "Error: fread failed\n");
-    exit(1);
-  }
-}
 
 int main(int argc, char **argv) {
     /* error checking */
@@ -122,7 +110,6 @@ int main(int argc, char **argv) {
                 pageFaults++;
                 if (freeFrame < NUM_FRAMES) {
                     /* Use free frame available */
-                    loadPage(backingStore, pageNum, physicalMemory, freeFrame);
                     frameNum = freeFrame;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
@@ -146,7 +133,6 @@ int main(int argc, char **argv) {
                     }
 
                     /* load the new page into the LRU frame */
-                    loadPage(backingStore, pageNum, physicalMemory, lru);
                     frameNum = lru;
                     pageTable[pageNum] = frameNum;
                     frameTable[frameNum] = pageNum;
